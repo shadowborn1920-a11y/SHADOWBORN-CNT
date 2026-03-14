@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SHADOWBORN — Community</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#000;--s1:#080808;--s2:#0d0d0d;--s3:#111;
+  --b1:#1a1a1a;--b2:#222;--b3:#333;--b4:#444;
+  --w:#f0f0f0;--g:#555;--lg:#888;
+  --red:#cc0000;--gold:#c9a84c;
+  --accent:#fff;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--w);font-family:'Rajdhani',sans-serif;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:#2a2a2a;}
+
+/* ══ SCREENS ══ */
+.screen{display:none;height:100vh;}
+.screen.active{display:flex;}
+
+/* ══ LOGIN SCREEN ══ */
+#login-screen{
+  align-items:center;justify-content:center;
+  background:#000;flex-direction:column;
+  position:relative;overflow:hidden;
+}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.03) 0%,transparent 60%);pointer-events:none;}
+.login-box{background:#080808;border:1px solid rgba(255,255,255,0.08);width:100%;max-width:360px;padding:40px;position:relative;z-index:1;}
+.lb-skull{font-size:44px;text-align:center;margin-bottom:14px;}
+.lb-brand{font-family:'Bebas Neue';font-size:28px;letter-spacing:6px;text-align:center;color:#fff;margin-bottom:4px;}
+.lb-sub{font-size:9px;letter-spacing:4px;color:var(--g);text-align:center;font-family:'Share Tech Mono';margin-bottom:28px;}
+.lb-label{display:block;font-size:8px;font-weight:700;letter-spacing:3px;color:var(--g);text-transform:uppercase;margin-bottom:5px;font-family:'Share Tech Mono';}
+.lb-input{width:100%;background:#000;border:1px solid rgba(255,255,255,0.08);border-bottom:1px solid rgba(255,255,255,0.3);color:#fff;padding:11px 12px;font-family:'Rajdhani';font-size:14px;font-weight:600;outline:none;margin-bottom:12px;transition:border-color .2s;}
+.lb-input:focus{border-bottom-color:#fff;}
+.lb-btn{width:100%;background:#fff;color:#000;font-family:'Rajdhani';font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;padding:12px;border:none;cursor:pointer;transition:all .2s;margin-top:4px;}
+.lb-btn:hover{background:#ddd;}
+.lb-err{font-size:10px;color:#ff6666;font-family:'Share Tech Mono';letter-spacing:1px;margin-bottom:10px;display:none;text-align:center;}
+.lb-note{font-size:9px;color:var(--b4);text-align:center;margin-top:14px;font-family:'Share Tech Mono';line-height:1.7;}
+
+/* ══ MAIN APP ══ */
+#app-screen{flex-direction:column;background:var(--bg);}
+
+/* TOP BAR */
+.topbar{
+  height:50px;flex-shrink:0;
+  background:#050505;border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;padding:0 16px;gap:12px;
+  position:relative;z-index:10;
+}
+.tb-brand{font-family:'Bebas Neue';font-size:16px;letter-spacing:4px;color:#fff;flex-shrink:0;}
+.tb-brand span{color:var(--g);}
+.tb-user{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.tb-av{font-size:18px;}
+.tb-name{font-family:'Bebas Neue';font-size:14px;letter-spacing:2px;color:#fff;}
+.tb-rank{font-size:8px;letter-spacing:2px;color:var(--g);font-family:'Share Tech Mono';}
+.tb-logout{font-size:9px;font-weight:700;letter-spacing:2px;padding:4px 10px;background:transparent;color:var(--g);border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-family:'Rajdhani';transition:all .2s;margin-left:10px;}
+.tb-logout:hover{color:#fff;border-color:rgba(255,255,255,0.2);}
+
+/* ONLINE COUNT */
+.tb-online{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--g);font-family:'Share Tech Mono';letter-spacing:2px;}
+.online-dot{width:5px;height:5px;background:#fff;border-radius:50%;opacity:.6;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:.6;}50%{opacity:.2;}}
+
+/* MAIN LAYOUT */
+.app-body{flex:1;display:flex;overflow:hidden;}
+
+/* ══ SIDEBAR ══ */
+.sidebar{
+  width:200px;flex-shrink:0;
+  background:#050505;border-right:1px solid rgba(255,255,255,0.05);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.sb-section{font-size:8px;font-weight:700;letter-spacing:4px;color:var(--b4);text-transform:uppercase;padding:12px 14px 5px;font-family:'Share Tech Mono';}
+.sb-item{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 14px;font-size:11px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  color:var(--g);cursor:pointer;
+  border-left:2px solid transparent;transition:all .2s;
+}
+.sb-item:hover{color:var(--w);background:rgba(255,255,255,0.03);}
+.sb-item.on{color:var(--w);background:rgba(255,255,255,0.04);border-left-color:rgba(255,255,255,0.4);}
+.sb-ic{font-size:14px;width:18px;text-align:center;}
+.sb-badge{margin-left:auto;background:rgba(255,255,255,0.1);color:#fff;font-size:8px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;}
+
+/* ONLINE MEMBERS */
+.sb-members{flex:1;overflow-y:auto;padding:6px 0;}
+.sbm-item{display:flex;align-items:center;gap:8px;padding:7px 14px;}
+.sbm-av{font-size:16px;flex-shrink:0;}
+.sbm-info{flex:1;overflow:hidden;}
+.sbm-name{font-size:11px;font-weight:700;color:var(--lg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sbm-rank{font-size:8px;color:var(--g);letter-spacing:1px;}
+.sbm-dot{width:6px;height:6px;border-radius:50%;background:#fff;opacity:.5;flex-shrink:0;}
+
+/* ══ MAIN CONTENT ══ */
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.content-page{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.content-page.active{display:flex;}
+
+/* ══ CHAT ══ */
+.chat-header{
+  padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.05);
+  flex-shrink:0;background:#050505;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ch-title{font-family:'Bebas Neue';font-size:16px;letter-spacing:3px;color:#fff;}
+.ch-sub{font-size:9px;color:var(--g);font-family:'Share Tech Mono';letter-spacing:2px;}
+
+.chat-messages{
+  flex:1;overflow-y:auto;padding:16px;
+  display:flex;flex-direction:column;gap:2px;
+}
+
+/* Message types */
+.msg{display:flex;gap:10px;padding:4px 0;max-width:100%;}
+.msg-av{font-size:22px;flex-shrink:0;width:32px;text-align:center;margin-top:2px;}
+.msg-body{flex:1;min-width:0;}
+.msg-meta{display:flex;align-items:baseline;gap:6px;margin-bottom:2px;}
+.msg-name{font-family:'Bebas Neue';font-size:13px;letter-spacing:2px;color:#fff;}
+.msg-name.king{color:var(--gold);}
+.msg-rank{font-size:7px;letter-spacing:2px;color:var(--b4);text-transform:uppercase;font-family:'Share Tech Mono';}
+.msg-time{font-size:9px;color:var(--b4);font-family:'Share Tech Mono';margin-left:auto;}
+.msg-text{font-size:13px;font-weight:600;color:var(--lg);line-height:1.5;word-break:break-word;}
+.msg-text.king{color:rgba(255,255,255,0.7);}
+
+/* Own message */
+.msg.own{flex-direction:row-reverse;}
+.msg.own .msg-body{align-items:flex-end;display:flex;flex-direction:column;}
+.msg.own .msg-meta{flex-direction:row-reverse;}
+.msg.own .msg-text{background:rgba(255,255,255,0.06);padding:7px 11px;color:var(--w);}
+
+/* System message */
+.sys-msg{text-align:center;padding:8px;font-size:9px;color:var(--b4);font-family:'Share Tech Mono';letter-spacing:2px;}
+
+/* Announcement */
+.announce-msg{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+  border-left:2px solid rgba(255,255,255,0.3);
+  padding:10px 14px;margin:6px 0;
+}
+.am-lbl{font-size:7px;letter-spacing:3px;color:var(--b4);text-transform:uppercase;font-family:'Share Tech Mono';margin-bottom:3px;}
+.am-text{font-size:12px;font-weight:700;color:#fff;}
+
+/* Chat Input */
+.chat-input-area{
+  padding:12px 16px;border-top:1px solid rgba(255,255,255,0.05);
+  flex-shrink:0;background:#050505;
+  display:flex;gap:10px;align-items:flex-end;
+}
+.chat-input{
+  flex:1;background:#000;border:1px solid rgba(255,255,255,0.08);
+  color:#fff;padding:10px 13px;font-family:'Rajdhani';font-size:13px;
+  font-weight:600;outline:none;resize:none;max-height:100px;
+  transition:border-color .2s;line-height:1.4;
+}
+.chat-input:focus{border-color:rgba(255,255,255,0.2);}
+.send-btn{
+  background:#fff;color:#000;border:none;
+  font-family:'Rajdhani';font-size:11px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:10px 16px;cursor:pointer;transition:all .2s;
+  flex-shrink:0;height:42px;
+}
+.send-btn:hover{background:#ddd;}
+.king-only-bar{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+  border-left:2px solid rgba(255,255,255,0.2);
+  padding:8px 14px;margin:8px 0;
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.kob-lbl{font-size:9px;letter-spacing:2px;color:var(--g);font-family:'Share Tech Mono';}
+.kob-input{flex:1;background:transparent;border:none;color:#fff;font-family:'Rajdhani';font-size:12px;outline:none;font-weight:600;}
+.kob-btn{font-size:9px;font-weight:700;letter-spacing:2px;padding:4px 10px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.15);cursor:pointer;font-family:'Rajdhani';}
+
+/* ══ EVENTS PAGE ══ */
+.events-content{flex:1;overflow-y:auto;padding:20px;}
+.ev-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.ev-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:4px;color:#fff;}
+.ev-cards{display:grid;gap:10px;}
+.ev-card{
+  background:#050505;border:1px solid rgba(255,255,255,0.06);
+  border-top:2px solid rgba(255,255,255,0.15);
+  padding:18px;transition:all .2s;position:relative;
+}
+.ev-card:hover{background:#080808;}
+.ev-status{position:absolute;top:14px;right:14px;font-size:8px;font-weight:700;letter-spacing:2px;padding:2px 8px;border:1px solid;text-transform:uppercase;font-family:'Share Tech Mono';}
+.ev-s-upcoming{color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.15);}
+.ev-s-today{color:#4caf50;border-color:rgba(76,175,80,0.3);background:rgba(76,175,80,0.05);}
+.ev-s-past{color:var(--b4);border-color:rgba(255,255,255,0.06);}
+.ev-date{font-family:'Share Tech Mono';font-size:9px;color:var(--b4);letter-spacing:2px;margin-bottom:5px;}
+.ev-name2{font-family:'Bebas Neue';font-size:22px;letter-spacing:3px;margin-bottom:6px;}
+.ev-desc2{font-size:12px;color:var(--g);line-height:1.7;margin-bottom:10px;}
+.ev-meta2{display:flex;gap:14px;flex-wrap:wrap;}
+.ev-meta2 span{font-size:10px;color:var(--b4);letter-spacing:1px;font-family:'Share Tech Mono';}
+.ev-rsvp{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:space-between;}
+.ev-rsvp-count{font-size:10px;color:var(--g);font-family:'Share Tech Mono';}
+.ev-rsvp-btn{font-size:9px;font-weight:700;letter-spacing:2px;padding:6px 14px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.15);cursor:pointer;font-family:'Rajdhani';transition:all .2s;}
+.ev-rsvp-btn:hover{background:rgba(255,255,255,0.06);}
+.ev-rsvp-btn.joined{color:var(--b4);border-color:rgba(255,255,255,0.06);cursor:default;}
+.no-events{text-align:center;padding:60px 20px;font-size:11px;color:var(--b4);font-family:'Share Tech Mono';letter-spacing:2px;}
+
+/* ══ MEMBERS PAGE ══ */
+.members-content{flex:1;overflow-y:auto;padding:20px;}
+.mem-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.mem-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.mem-card2{background:#050505;border:1px solid rgba(255,255,255,0.06);padding:16px;text-align:center;transition:all .2s;}
+.mem-card2:hover{background:#080808;}
+.mc2-av{font-size:34px;margin-bottom:8px;}
+.mc2-name{font-family:'Bebas Neue';font-size:16px;letter-spacing:2px;margin-bottom:2px;}
+.mc2-nick{font-size:10px;color:var(--g);margin-bottom:6px;}
+.mc2-rank{display:inline-block;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border:1px solid rgba(255,255,255,0.1);color:var(--lg);margin-bottom:5px;}
+.mc2-city{font-size:10px;color:var(--g);letter-spacing:1px;}
+.mc2-online{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px;font-size:8px;color:var(--g);font-family:'Share Tech Mono';}
+.mc2-dot{width:5px;height:5px;border-radius:50%;}
+
+/* ══ ADMIN PAGE ══ */
+.admin-content{flex:1;overflow-y:auto;padding:20px;}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.admin-box{background:#050505;border:1px solid rgba(255,255,255,0.06);padding:16px;}
+.ab-title{font-family:'Bebas Neue';font-size:14px;letter-spacing:3px;color:rgba(255,255,255,0.5);margin-bottom:12px;}
+.aform-row{display:flex;gap:8px;margin-bottom:8px;}
+.afi{flex:1;background:#000;border:1px solid rgba(255,255,255,0.08);color:#fff;padding:8px 10px;font-family:'Rajdhani';font-size:12px;font-weight:600;outline:none;}
+.afi:focus{border-color:rgba(255,255,255,0.3);}
+.afs{background:#000;border:1px solid rgba(255,255,255,0.08);color:#fff;padding:8px;font-family:'Rajdhani';font-size:11px;outline:none;}
+.afs option{background:#000;}
+.abtn{font-size:10px;font-weight:700;letter-spacing:2px;padding:8px 14px;background:#fff;color:#000;border:none;cursor:pointer;font-family:'Rajdhani';transition:all .2s;}
+.abtn:hover{background:#ddd;}
+.abtn-r{background:rgba(204,0,0,0.1);color:#ff8888;border:1px solid rgba(204,0,0,.2);}.abtn-r:hover{background:rgba(204,0,0,.2);}
+
+/* BUTTONS COMMON */
+.btn{font-family:'Rajdhani';font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.15);cursor:pointer;transition:all .2s;}
+.btn:hover{border-color:rgba(255,255,255,0.4);}
+.btn-w{background:#fff;color:#000;border-color:#fff;}.btn-w:hover{background:#ddd;}
+
+/* NOTIF */
+.notif{position:fixed;bottom:20px;right:20px;background:#080808;border:1px solid rgba(255,255,255,0.1);border-left:2px solid rgba(255,255,255,0.4);padding:9px 14px;font-size:11px;font-weight:600;letter-spacing:1px;z-index:9999;transform:translateY(100px);transition:transform .3s;font-family:'Share Tech Mono';color:#fff;}
+.notif.show{transform:translateY(0);}
+.notif.err{border-left-color:var(--red);color:#ff8888;}
+
+/* BOTTOM NAV */
+.bottom-nav{display:none;}
+
+/* MOBILE */
+@media(max-width:600px){
+  .sidebar{display:none;}
+  .admin-grid{grid-template-columns:1fr;}
+  .mem-list{grid-template-columns:1fr 1fr;}
+  .topbar{padding:0 10px;}
+  .tb-rank{display:none;}
+  .app-body{padding-bottom:60px;}
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:#050505;border-top:1px solid rgba(255,255,255,0.08);
+    height:60px;
+  }
+  .bn-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2px;cursor:pointer;transition:all .2s;position:relative;
+    border-top:2px solid transparent;
+  }
+  .bn-item.on{border-top-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.04);}
+  .bn-ic{font-size:20px;line-height:1;}
+  .bn-lbl{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g);font-family:'Share Tech Mono';}
+  .bn-item.on .bn-lbl{color:#fff;}
+  .bn-badge{position:absolute;top:5px;right:calc(50% - 20px);background:rgba(255,255,255,0.15);color:#fff;font-size:7px;font-weight:700;padding:1px 4px;min-width:14px;text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<div class="notif" id="notif"></div>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div class="screen active" id="login-screen">
+  <div class="login-bg"></div>
+  <div class="login-box">
+    <div class="lb-skull">☠</div>
+    <div class="lb-brand">SHADOWBORN</div>
+    <div class="lb-sub">> COMMUNITY ACCESS_</div>
+    <label class="lb-label">Your Name</label>
+    <input type="text" class="lb-input" id="li-name" placeholder="Rahul" maxlength="20"/>
+    <label class="lb-label">Member ID</label>
+    <input type="text" class="lb-input" id="li-id" placeholder="SB-301" maxlength="10" style="text-transform:uppercase"/>
+    <div class="lb-err" id="li-err">⚠ Wrong ID. Check karo.</div>
+    <button class="lb-btn" onclick="doLogin()">ENTER SHADOWBORN</button>
+    <div class="lb-note">Sirf ShadowBorn members access kar sakte hain.<br>Tumhara ID Sahil ne diya hoga.</div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div class="screen" id="app-screen">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="tb-brand">SHADOW<span>BORN</span></div>
+    <div class="tb-online"><div class="online-dot"></div><span id="online-count">0</span> online</div>
+    <div class="tb-user">
+      <div class="tb-av" id="tb-av">👤</div>
+      <div>
+        <div class="tb-name" id="tb-name">—</div>
+        <div class="tb-rank" id="tb-rank">—</div>
+      </div>
+      <button class="tb-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-section">// Channels</div>
+      <div class="sb-item on" onclick="goPage('chat-general',this)" data-page="chat-general">
+        <span class="sb-ic">💬</span>General
+      </div>
+      <div class="sb-item" onclick="goPage('chat-random',this)" data-page="chat-random">
+        <span class="sb-ic">🔥</span>Hangout
+      </div>
+      <div class="sb-item" onclick="goPage('chat-plans',this)" data-page="chat-plans">
+        <span class="sb-ic">🎯</span>Plans
+      </div>
+
+      <div class="sb-section">// Brotherhood</div>
+      <div class="sb-item" onclick="goPage('events',this)" data-page="events">
+        <span class="sb-ic">📅</span>Events
+        <span class="sb-badge" id="ev-badge">0</span>
+      </div>
+      <div class="sb-item" onclick="goPage('members',this)" data-page="members">
+        <span class="sb-ic">👥</span>Members
+      </div>
+
+      <div class="sb-section" id="admin-sec" style="display:none">// King</div>
+      <div class="sb-item" id="admin-nav" onclick="goPage('admin',this)" data-page="admin" style="display:none">
+        <span class="sb-ic">👑</span>Admin
+      </div>
+
+      <div class="sb-section">// Online</div>
+      <div class="sb-members" id="online-list"></div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="main-content">
+
+      <!-- GENERAL CHAT -->
+      <div class="content-page active" id="page-chat-general">
+        <div class="chat-header">
+          <div><div class="ch-title">💬 GENERAL</div><div class="ch-sub">General brotherhood chat</div></div>
+        </div>
+        <div class="chat-messages" id="msgs-general"></div>
+        <div id="king-announce-bar" style="display:none;padding:0 12px">
+          <div class="king-only-bar">
+            <span class="kob-lbl">📢 ANNOUNCE:</span>
+            <input type="text" class="kob-input" id="announce-input" placeholder="Brotherhood ke liye announcement..."/>
+            <button class="kob-btn" onclick="sendAnnouncement()">Send</button>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <textarea class="chat-input" id="input-general" placeholder="Kuch likho..." rows="1" onkeydown="handleKey(event,'general')" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendMsg('general')">Send</button>
+        </div>
+      </div>
+
+      <!-- HANGOUT CHAT -->
+      <div class="content-page" id="page-chat-random">
+        <div class="chat-header">
+          <div><div class="ch-title">🔥 HANGOUT</div><div class="ch-sub">Casual baat cheet</div></div>
+        </div>
+        <div class="chat-messages" id="msgs-random"></div>
+        <div class="chat-input-area">
+          <textarea class="chat-input" id="input-random" placeholder="Kuch bhi likho..." rows="1" onkeydown="handleKey(event,'random')" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendMsg('random')">Send</button>
+        </div>
+      </div>
+
+      <!-- PLANS CHAT -->
+      <div class="content-page" id="page-chat-plans">
+        <div class="chat-header">
+          <div><div class="ch-title">🎯 PLANS</div><div class="ch-sub">Events aur plans discuss karo</div></div>
+        </div>
+        <div class="chat-messages" id="msgs-plans"></div>
+        <div class="chat-input-area">
+          <textarea class="chat-input" id="input-plans" placeholder="Koi plan hai?" rows="1" onkeydown="handleKey(event,'plans')" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendMsg('plans')">Send</button>
+        </div>
+      </div>
+
+      <!-- EVENTS PAGE -->
+      <div class="content-page" id="page-events">
+        <div class="events-content">
+          <div class="ev-header">
+            <div class="ev-title">📅 EVENTS</div>
+          </div>
+          <div class="ev-cards" id="events-list">
+            <div class="no-events">> No events yet. Shadow King will announce soon.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMBERS PAGE -->
+      <div class="content-page" id="page-members">
+        <div class="members-content">
+          <div class="mem-header">
+            <div style="font-family:'Bebas Neue';font-size:22px;letter-spacing:4px;color:#fff">👥 BROTHERHOOD</div>
+          </div>
+          <div class="mem-list" id="members-list"></div>
+        </div>
+      </div>
+
+      <!-- ADMIN PAGE (KING ONLY) -->
+      <div class="content-page" id="page-admin">
+        <div class="admin-content">
+          <div style="font-family:'Bebas Neue';font-size:22px;letter-spacing:4px;color:#fff;margin-bottom:18px">👑 KING PANEL</div>
+          <div class="admin-grid">
+
+            <!-- ADD EVENT -->
+            <div class="admin-box">
+              <div class="ab-title">ADD EVENT</div>
+              <div class="aform-row"><input type="text" class="afi" id="aev-name" placeholder="Event naam *"/></div>
+              <div class="aform-row">
+                <input type="date" class="afi" id="aev-date"/>
+                <input type="time" class="afi" id="aev-time"/>
+              </div>
+              <div class="aform-row"><input type="text" class="afi" id="aev-loc" placeholder="Location"/></div>
+              <div class="aform-row"><input type="text" class="afi" id="aev-desc" placeholder="Description"/></div>
+              <div class="aform-row">
+                <input type="number" class="afi" id="aev-budget" placeholder="Budget ₹"/>
+                <select class="afs" id="aev-status">
+                  <option value="upcoming">Upcoming</option>
+                  <option value="today">Today</option>
+                  <option value="past">Past</option>
+                </select>
+              </div>
+              <button class="abtn" style="width:100%" onclick="addEvent()">+ Create Event</button>
+            </div>
+
+            <!-- ADD MEMBER -->
+            <div class="admin-box">
+              <div class="ab-title">ADD MEMBER</div>
+              <div class="aform-row">
+                <input type="text" class="afi" id="am-name" placeholder="Name *"/>
+                <input type="text" class="afi" id="am-id" placeholder="ID (SB-XXX) *"/>
+              </div>
+              <div class="aform-row">
+                <input type="text" class="afi" id="am-nick" placeholder="Nickname"/>
+                <input type="text" class="afi" id="am-av" placeholder="Emoji 👤" maxlength="4"/>
+              </div>
+              <div class="aform-row">
+                <select class="afs" id="am-rank" style="flex:1">
+                  <option>👑 Shadow King</option>
+                  <option>⚔ Enforcer</option>
+                  <option>🐺 Architect</option>
+                  <option>🔥 Connector</option>
+                  <option>🌘 Guardian</option>
+                  <option selected>🌘 Faded</option>
+                </select>
+                <input type="text" class="afi" id="am-city" placeholder="City"/>
+              </div>
+              <button class="abtn" style="width:100%;margin-top:4px" onclick="addMember()">+ Add Member</button>
+            </div>
+
+            <!-- DELETE MEMBER -->
+            <div class="admin-box">
+              <div class="ab-title">REMOVE MEMBER</div>
+              <div class="aform-row">
+                <select class="afs" id="del-member-sel" style="flex:1"></select>
+                <button class="abtn abtn-r" onclick="delMember()">Remove</button>
+              </div>
+            </div>
+
+            <!-- BROADCAST -->
+            <div class="admin-box">
+              <div class="ab-title">BROADCAST MESSAGE</div>
+              <div class="aform-row"><input type="text" class="afi" id="bc-msg" placeholder="Poori gang ke liye message..."/></div>
+              <div class="aform-row">
+                <select class="afs" id="bc-channel">
+                  <option value="general">General</option>
+                  <option value="random">Hangout</option>
+                  <option value="plans">Plans</option>
+                </select>
+                <button class="abtn" onclick="broadcast()">📢 Send</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main-content -->
+  </div><!-- end app-body -->
+
+  <!-- BOTTOM NAV — MOBILE ONLY -->
+  <div class="bottom-nav" id="bottom-nav">
+    <div class="bn-item on" id="bn-general" onclick="bnGo('chat-general','bn-general')">
+      <div class="bn-ic">💬</div>
+      <div class="bn-lbl">Chat</div>
+    </div>
+    <div class="bn-item" id="bn-random" onclick="bnGo('chat-random','bn-random')">
+      <div class="bn-ic">🔥</div>
+      <div class="bn-lbl">Hangout</div>
+    </div>
+    <div class="bn-item" id="bn-plans" onclick="bnGo('chat-plans','bn-plans')">
+      <div class="bn-ic">🎯</div>
+      <div class="bn-lbl">Plans</div>
+    </div>
+    <div class="bn-item" id="bn-events" onclick="bnGo('events','bn-events')">
+      <div class="bn-ic">📅</div>
+      <div class="bn-lbl">Events</div>
+      <span class="bn-badge" id="bn-ev-badge"></span>
+    </div>
+    <div class="bn-item" id="bn-members" onclick="bnGo('members','bn-members')">
+      <div class="bn-ic">👥</div>
+      <div class="bn-lbl">Members</div>
+    </div>
+    <div class="bn-item" id="bn-admin" onclick="bnGo('admin','bn-admin')" style="display:none">
+      <div class="bn-ic">👑</div>
+      <div class="bn-lbl">King</div>
+    </div>
+  </div>
+
+</div><!-- end app-screen -->
+
+<!-- KING PASSWORD MODAL -->
+<div style="position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:800;display:none;align-items:center;justify-content:center;" id="king-pass-modal">
+  <div style="background:#080808;border:1px solid rgba(255,255,255,0.1);padding:36px;width:300px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px">👑</div>
+    <div style="font-family:'Bebas Neue';font-size:20px;letter-spacing:4px;color:#fff;margin-bottom:4px">KING ACCESS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:var(--g);font-family:'Share Tech Mono';margin-bottom:20px">> PASSWORD REQUIRED_</div>
+    <input type="password" id="king-pass-input" placeholder="••••••••••••" style="width:100%;background:#000;border:1px solid rgba(255,255,255,0.1);border-bottom:2px solid rgba(255,255,255,0.4);color:#fff;padding:12px;font-family:'Share Tech Mono';font-size:15px;letter-spacing:4px;text-align:center;outline:none;margin-bottom:8px;" onkeydown="if(event.key==='Enter')checkKingPass()"/>
+    <div id="king-pass-err" style="color:#ff4444;font-size:9px;letter-spacing:2px;font-family:'Share Tech Mono';margin-bottom:10px;display:none">⚠ WRONG PASSWORD</div>
+    <button onclick="checkKingPass()" style="width:100%;background:#fff;color:#000;font-family:'Rajdhani';font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;padding:11px;border:none;cursor:pointer;margin-top:4px;">UNLOCK</button>
+    <button onclick="closeKingPass()" style="width:100%;background:transparent;color:var(--g);font-family:'Rajdhani';font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:8px;border:none;cursor:pointer;margin-top:6px;">Cancel</button>
+  </div>
+</div>
+
+<script>
+const KING_PASS = 'shadowking001';
+let kingUnlocked = false;
+
+function openKingPass(){
+  document.getElementById('king-pass-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('king-pass-input').focus(),100);
+}
+function closeKingPass(){
+  document.getElementById('king-pass-modal').style.display='none';
+  document.getElementById('king-pass-input').value='';
+  document.getElementById('king-pass-err').style.display='none';
+}
+function checkKingPass(){
+  const v=document.getElementById('king-pass-input').value;
+  if(v===KING_PASS){
+    kingUnlocked=true;
+    closeKingPass();
+    // Actually go to admin page
+    document.querySelectorAll('.content-page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
+    document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
+    document.getElementById('page-admin').classList.add('active');
+    const bnAdm=document.getElementById('bn-admin');
+    if(bnAdm)bnAdm.classList.add('on');
+    notif('👑 Welcome, Shadow King!');
+  } else {
+    document.getElementById('king-pass-err').style.display='block';
+    document.getElementById('king-pass-input').value='';
+  }
+}
+
+// ══════════════════════════════════════════
+// FIREBASE CONFIG — YAHAN APNA CONFIG DALO
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// ══════════════════════════════════════════
+// DEMO MODE — Firebase setup na hone tak
+// ══════════════════════════════════════════
+let DEMO_MODE = firebaseConfig.apiKey === "YOUR_API_KEY";
+let db = null;
+
+if(!DEMO_MODE){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+  }catch(e){DEMO_MODE=true;}
+}
+
+// ══════════════════════════════════════════
+// MEMBERS DATABASE (Local fallback)
+// ══════════════════════════════════════════
+let MEMBERS_DB = {
+  'KG-001':{name:'Sahil',nick:'The Blade',av:'⚔',rank:'👑 Shadow King',city:'Mumbai',isKing:true},
+  'SB-002':{name:'Davil',nick:'Shadow Eye',av:'👁',rank:'⚔ Enforcer',city:'Delhi'},
+  'SB-101':{name:'Arjun',nick:'The Wolf',av:'🐺',rank:'🐺 Architect',city:'Pune'},
+  'SB-201':{name:'Karan',nick:'Smoke',av:'🔥',rank:'🔥 Connector',city:'Jaipur'},
+  'SB-301':{name:'Rohan',nick:'Rookie',av:'🌘',rank:'🌘 Guardian',city:'Bangalore'},
+  'SB-302':{name:'Nikhil',nick:'Phantom',av:'👤',rank:'🌘 Faded',city:'Chennai'},
+};
+
+let currentUser = null;
+let onlineUsers = {};
+let demoMessages = {general:[],random:[],plans:[]};
+let demoEvents = [];
+let demoOnline = {};
+
+// ══════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════
+function doLogin(){
+  const name = document.getElementById('li-name').value.trim();
+  const id = document.getElementById('li-id').value.trim().toUpperCase();
+  if(!name){notif('Naam daalo!','err');return;}
+  if(!id){notif('ID daalo!','err');return;}
+  
+  // Check member
+  const member = MEMBERS_DB[id];
+  if(!member){
+    document.getElementById('li-err').style.display='block';
+    return;
+  }
+  document.getElementById('li-err').style.display='none';
+
+  currentUser = {
+    name: member.name || name,
+    id: id,
+    nick: member.nick || 'Shadow',
+    av: member.av || '👤',
+    rank: member.rank || '🌘 Faded',
+    city: member.city || '—',
+    isKing: member.isKing || false,
+  };
+
+  // Set UI
+  document.getElementById('tb-name').textContent=currentUser.name;
+  document.getElementById('tb-rank').textContent=currentUser.rank;
+  document.getElementById('tb-av').textContent=currentUser.av;
+
+// King panel show karo
+  if(currentUser.isKing){
+    document.getElementById('admin-sec').style.display='';
+    document.getElementById('admin-nav').style.display='';
+    document.getElementById('king-announce-bar').style.display='';
+    const bna=document.getElementById('bn-admin');
+    if(bna)bna.style.display='';
+  }
+
+  // Switch screens
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('app-screen').classList.add('active');
+
+  // Init
+  initApp();
+}
+
+function doLogout(){
+  if(DEMO_MODE){
+    delete demoOnline[currentUser.id];
+    renderOnline();
+  } else {
+    db.ref('online/'+currentUser.id).remove();
+  }
+  currentUser=null;
+  document.getElementById('app-screen').classList.remove('active');
+  document.getElementById('login-screen').classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function initApp(){
+  if(DEMO_MODE){
+    initDemo();
+  } else {
+    initFirebase();
+  }
+  renderMembers();
+  renderDelSelect();
+  loadEvents();
+}
+
+// ══════════════════════════════════════════
+// DEMO MODE
+// ══════════════════════════════════════════
+function initDemo(){
+  // Set online
+  demoOnline[currentUser.id]={...currentUser,ts:Date.now()};
+  renderOnline();
+
+  // Welcome message
+  if(demoMessages.general.length===0){
+    demoMessages.general.push({
+      type:'sys',text:currentUser.name+' joined the brotherhood ☠',ts:Date.now()
+    });
+  }
+  renderDemoMessages('general');
+  renderDemoMessages('random');
+  renderDemoMessages('plans');
+}
+
+function renderDemoMessages(channel){
+  const container=document.getElementById('msgs-'+channel);
+  container.innerHTML='';
+  if(demoMessages[channel].length===0){
+    container.innerHTML='<div class="sys-msg">Brotherhood chat start karo ☠</div>';
+    return;
+  }
+  demoMessages[channel].forEach(m=>{
+    container.appendChild(createMsgEl(m));
+  });
+  container.scrollTop=container.scrollHeight;
+}
+
+function sendDemoMsg(channel,text,type='msg'){
+  const msg={
+    type:type,
+    uid:currentUser.id,
+    name:currentUser.name,
+    av:currentUser.av,
+    rank:currentUser.rank,
+    isKing:currentUser.isKing,
+    text:text,
+    ts:Date.now()
+  };
+  demoMessages[channel].push(msg);
+  renderDemoMessages(channel);
+}
+
+// ══════════════════════════════════════════
+// FIREBASE MODE
+// ══════════════════════════════════════════
+function initFirebase(){
+  // Set online presence
+  const onlineRef=db.ref('online/'+currentUser.id);
+  onlineRef.set({...currentUser,ts:Date.now()});
+  onlineRef.onDisconnect().remove();
+
+  // Listen online
+  db.ref('online').on('value',snap=>{
+    onlineUsers=snap.val()||{};
+    renderOnline();
+  });
+
+  // Listen messages
+  ['general','random','plans'].forEach(ch=>{
+    db.ref('messages/'+ch).limitToLast(80).on('child_added',snap=>{
+      const msg=snap.val();
+      const container=document.getElementById('msgs-'+ch);
+      container.appendChild(createMsgEl(msg));
+      container.scrollTop=container.scrollHeight;
+    });
+  });
+
+  // Listen events
+  db.ref('events').on('value',snap=>{
+    const evs=snap.val()||{};
+    renderEvents(Object.values(evs));
+  });
+
+  // Listen members
+  db.ref('members').on('value',snap=>{
+    const m=snap.val();
+    if(m){MEMBERS_DB={...MEMBERS_DB,...m};}
+    renderMembers();renderDelSelect();
+  });
+}
+
+// ══════════════════════════════════════════
+// MESSAGE FUNCTIONS
+// ══════════════════════════════════════════
+function sendMsg(channel){
+  const input=document.getElementById('input-'+channel);
+  const text=input.value.trim();
+  if(!text)return;
+
+  if(DEMO_MODE){
+    sendDemoMsg(channel,text);
+  } else {
+    db.ref('messages/'+channel).push({
+      uid:currentUser.id,name:currentUser.name,
+      av:currentUser.av,rank:currentUser.rank,
+      isKing:currentUser.isKing||false,
+      text:text,ts:Date.now(),type:'msg'
+    });
+  }
+  input.value='';
+  input.style.height='';
+}
+
+function sendAnnouncement(){
+  const input=document.getElementById('announce-input');
+  const text=input.value.trim();
+  if(!text)return;
+  const msg={
+    uid:currentUser.id,name:currentUser.name,
+    av:currentUser.av,rank:currentUser.rank,
+    isKing:true,text:text,ts:Date.now(),type:'announce'
+  };
+  if(DEMO_MODE){demoMessages.general.push(msg);renderDemoMessages('general');}
+  else{db.ref('messages/general').push(msg);}
+  input.value='';
+  notif('📢 Announcement sent!');
+}
+
+function broadcast(){
+  const text=document.getElementById('bc-msg').value.trim();
+  const ch=document.getElementById('bc-channel').value;
+  if(!text)return;
+  const msg={
+    uid:currentUser.id,name:currentUser.name,
+    av:currentUser.av,rank:currentUser.rank,
+    isKing:true,text:'📢 '+text,ts:Date.now(),type:'announce'
+  };
+  if(DEMO_MODE){demoMessages[ch].push(msg);renderDemoMessages(ch);}
+  else{db.ref('messages/'+ch).push(msg);}
+  document.getElementById('bc-msg').value='';
+  notif('📢 Broadcast sent to '+ch+'!');
+}
+
+function createMsgEl(m){
+  const isOwn=m.uid===currentUser?.id;
+  if(m.type==='sys'){
+    const d=document.createElement('div');
+    d.className='sys-msg';d.textContent=m.text;return d;
+  }
+  if(m.type==='announce'){
+    const d=document.createElement('div');
+    d.className='announce-msg';
+    d.innerHTML=`<div class="am-lbl">👑 SHADOW KING ANNOUNCEMENT</div><div class="am-text">${escHtml(m.text)}</div>`;
+    return d;
+  }
+  const time=new Date(m.ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const d=document.createElement('div');
+  d.className='msg'+(isOwn?' own':'');
+  d.innerHTML=`
+    <div class="msg-av">${m.av||'👤'}</div>
+    <div class="msg-body">
+      <div class="msg-meta">
+        <span class="msg-name${m.isKing?' king':''}">${escHtml(m.name)}</span>
+        <span class="msg-rank">${escHtml(m.rank||'')}</span>
+        <span class="msg-time">${time}</span>
+      </div>
+      <div class="msg-text${m.isKing?' king':''}">${escHtml(m.text)}</div>
+    </div>`;
+  return d;
+}
+
+function handleKey(e,channel){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg(channel);}
+}
+function autoResize(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+
+// ══════════════════════════════════════════
+// EVENTS
+// ══════════════════════════════════════════
+function addEvent(){
+  const name=document.getElementById('aev-name').value.trim();
+  if(!name){notif('Event naam daalo!','err');return;}
+  const ev={
+    id:'EV'+Date.now(),
+    name:name.toUpperCase(),
+    date:document.getElementById('aev-date').value,
+    time:document.getElementById('aev-time').value,
+    loc:document.getElementById('aev-loc').value||'TBD',
+    desc:document.getElementById('aev-desc').value||'',
+    budget:document.getElementById('aev-budget').value||'0',
+    status:document.getElementById('aev-status').value,
+    rsvp:[],ts:Date.now()
+  };
+  if(DEMO_MODE){demoEvents.push(ev);renderEvents(demoEvents);}
+  else{db.ref('events/'+ev.id).set(ev);}
+  ['aev-name','aev-date','aev-time','aev-loc','aev-desc','aev-budget'].forEach(i=>document.getElementById(i).value='');
+  notif('✓ Event created!');
+  updateEvBadge();
+}
+
+function loadEvents(){
+  if(DEMO_MODE)renderEvents(demoEvents);
+}
+
+function renderEvents(evs){
+  const list=document.getElementById('events-list');
+  if(!evs||evs.length===0){
+    list.innerHTML='<div class="no-events">> No events yet. Shadow King will announce soon. ☠</div>';
+    return;
+  }
+  const sorted=[...evs].sort((a,b)=>b.ts-a.ts);
+  list.innerHTML=sorted.map(ev=>{
+    const joined=(ev.rsvp||[]).includes(currentUser?.id);
+    return `<div class="ev-card">
+      <span class="ev-status ev-s-${ev.status||'upcoming'}">${ev.status||'upcoming'}</span>
+      <div class="ev-date">📅 ${ev.date||'TBD'}${ev.time?' · '+ev.time:''}</div>
+      <div class="ev-name2">${ev.name}</div>
+      <div class="ev-desc2">${ev.desc||'Details aane wale hain...'}</div>
+      <div class="ev-meta2">
+        <span>📍 ${ev.loc}</span>
+        <span>💰 ₹${ev.budget||0}</span>
+        <span>👥 ${(ev.rsvp||[]).length} going</span>
+      </div>
+      <div class="ev-rsvp">
+        <div class="ev-rsvp-count">${(ev.rsvp||[]).length} members going</div>
+        <button class="ev-rsvp-btn ${joined?'joined':''}" onclick="rsvp('${ev.id}',${joined})">${joined?'✓ Going':'I\'m In'}</button>
+      </div>
+    </div>`;
+  }).join('');
+  updateEvBadge(evs.filter(e=>e.status==='upcoming').length);
+}
+
+function rsvp(id,isJoined){
+  if(DEMO_MODE){
+    const ev=demoEvents.find(e=>e.id===id);
+    if(ev){
+      if(isJoined)ev.rsvp=(ev.rsvp||[]).filter(x=>x!==currentUser.id);
+      else{ev.rsvp=ev.rsvp||[];ev.rsvp.push(currentUser.id);}
+      renderEvents(demoEvents);
+    }
+  } else {
+    const ref=db.ref('events/'+id+'/rsvp');
+    ref.once('value').then(snap=>{
+      let r=snap.val()||[];
+      if(isJoined)r=r.filter(x=>x!==currentUser.id);
+      else if(!r.includes(currentUser.id))r.push(currentUser.id);
+      ref.set(r);
+    });
+  }
+}
+
+function updateEvBadge(n){
+  if(n!==undefined){
+    document.getElementById('ev-badge').textContent=n;
+    const bnb=document.getElementById('bn-ev-badge');
+    if(bnb)bnb.textContent=n>0?n:'';
+  }
+}
+
+// ══════════════════════════════════════════
+// MEMBERS
+// ══════════════════════════════════════════
+function renderMembers(){
+  const list=document.getElementById('members-list');
+  list.innerHTML=Object.entries(MEMBERS_DB).map(([id,m])=>{
+    const isOnline=DEMO_MODE?(!!demoOnline[id]):(!!onlineUsers[id]);
+    return `<div class="mem-card2">
+      <div class="mc2-av">${m.av||'👤'}</div>
+      <div class="mc2-name">${m.name}</div>
+      <div class="mc2-nick">"${m.nick||'Shadow'}"</div>
+      <div class="mc2-rank">${m.rank||'Faded'}</div>
+      <div class="mc2-city">📍 ${m.city||'—'}</div>
+      <div class="mc2-online">
+        <div class="mc2-dot ${isOnline?'s-on':'s-off'}" style="background:${isOnline?'rgba(255,255,255,0.6)':'#333'}"></div>
+        ${isOnline?'Online':'Offline'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addMember(){
+  const name=document.getElementById('am-name').value.trim();
+  const id=document.getElementById('am-id').value.trim().toUpperCase();
+  if(!name||!id){notif('Name aur ID zaroori hai!','err');return;}
+  const m={
+    name,id,
+    nick:document.getElementById('am-nick').value||'Shadow',
+    av:document.getElementById('am-av').value||'👤',
+    rank:document.getElementById('am-rank').value,
+    city:document.getElementById('am-city').value||'India',
+  };
+  MEMBERS_DB[id]=m;
+  if(!DEMO_MODE)db.ref('members/'+id).set(m);
+  ['am-name','am-id','am-nick','am-av','am-city'].forEach(i=>document.getElementById(i).value='');
+  renderMembers();renderDelSelect();
+  notif('✓ '+name+' added!');
+}
+
+function renderDelSelect(){
+  const sel=document.getElementById('del-member-sel');
+  sel.innerHTML=Object.entries(MEMBERS_DB).filter(([id])=>id!=='KG-001').map(([id,m])=>`<option value="${id}">${m.name} (${id})</option>`).join('');
+}
+
+function delMember(){
+  const id=document.getElementById('del-member-sel').value;
+  if(!id)return;
+  const name=MEMBERS_DB[id]?.name;
+  if(confirm('Remove '+name+'?')){
+    delete MEMBERS_DB[id];
+    if(!DEMO_MODE)db.ref('members/'+id).remove();
+    renderMembers();renderDelSelect();
+    notif('🗑 '+name+' removed.');
+  }
+}
+
+// ══════════════════════════════════════════
+// ONLINE LIST
+// ══════════════════════════════════════════
+function renderOnline(){
+  const source=DEMO_MODE?demoOnline:onlineUsers;
+  const list=document.getElementById('online-list');
+  const count=Object.keys(source).length;
+  document.getElementById('online-count').textContent=count;
+  list.innerHTML=Object.values(source).map(u=>`
+    <div class="sbm-item">
+      <div class="sbm-av">${u.av||'👤'}</div>
+      <div class="sbm-info">
+        <div class="sbm-name">${u.name}</div>
+        <div class="sbm-rank">${u.rank||''}</div>
+      </div>
+      <div class="sbm-dot"></div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+// BOTTOM NAV
+function bnGo(page, btnId){
+  // King page — password check
+  if(page==='admin'&&!kingUnlocked){openKingPass();return;}
+  // Update bottom nav
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
+  const btn=document.getElementById(btnId);
+  if(btn)btn.classList.add('on');
+  // Update sidebar too
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
+  const sideEl=document.querySelector('.sb-item[data-page="'+page+'"]');
+  if(sideEl)sideEl.classList.add('on');
+  // Switch page
+  document.querySelectorAll('.content-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(page==='events')renderEvents(DEMO_MODE?demoEvents:[]);
+  if(page==='members')renderMembers();
+}
+
+function goPage(page, el){
+  // King page — password check
+  if(page==='admin'&&!kingUnlocked){openKingPass();return;}
+  document.querySelectorAll('.content-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('on');
+  // sync bottom nav
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
+  const bnMap={'chat-general':'bn-general','chat-random':'bn-random','chat-plans':'bn-plans','events':'bn-events','members':'bn-members','admin':'bn-admin'};
+  const bnEl=document.getElementById(bnMap[page]);
+  if(bnEl)bnEl.classList.add('on');
+  if(page==='events')renderEvents(DEMO_MODE?demoEvents:[]);
+  if(page==='members')renderMembers();
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function escHtml(t){
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function notif(msg,type='ok'){
+  const n=document.getElementById('notif');
+  n.textContent=msg;n.className='notif'+(type==='err'?' err':'');
+  n.classList.add('show');setTimeout(()=>n.classList.remove('show'),2800);
+}
+
+// Initial welcome
+document.getElementById('msgs-general').innerHTML='<div class="sys-msg">☠ ShadowBorn Community mein swagat hai. Login karo aur baat karo.</div>';
+document.getElementById('msgs-random').innerHTML='<div class="sys-msg">🔥 Yahan kuch bhi baat karo!</div>';
+document.getElementById('msgs-plans').innerHTML='<div class="sys-msg">🎯 Plans, rides, events sab yahan discuss karo.</div>';
+</script>
+</body>
+</html>
